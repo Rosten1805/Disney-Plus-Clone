@@ -92,6 +92,8 @@ verification feature, and were fixed immediately rather than left in:
 |---|---------|-----|
 | 1 | `nodemailer@7.0.13` had several real advisories (SSRF / arbitrary file read via the `raw` message option — GHSA-p6gq-j5cr-w38f, plus ReDoS and TLS-validation issues in OAuth2 token fetch) | Upgraded to `nodemailer@10.2.1`, the first patched release; confirmed `npm audit` no longer flags it and the verification-email flow still works end to end |
 | 2 | No baseline HTTP security headers (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`) | Added in `next.config.js` via `headers()`, applied to every route |
+| 3 | A first Dockerfile draft passed `TMDB_API_KEY`/`TMDB_API_URL` into the build via `ARG`/`ENV` — BuildKit itself warned `SecretsUsedInArgOrEnv`, since that bakes the value into the image layer history (recoverable with `docker history`) | Switched to [Docker build secrets](https://docs.docker.com/build/building/secrets/) (`--mount=type=secret`), confirmed with `docker history --no-trunc` that the key no longer appears anywhere in the image |
+| 4 | `npm ci` failed in a clean environment (works, but only because `npm install` locally had already papered over it) — `next-auth`'s optional peer dependency on `nodemailer@^7.0.7` conflicted with the `nodemailer@10.2.1` fix from #1, producing an unresolvable `ERESOLVE` | Added an `overrides` entry in `package.json` pinning `nodemailer` to `^10.2.1` project-wide, then regenerated `package-lock.json`; confirmed `npm ci` succeeds standalone (e.g. inside the Docker build) |
 
 ## Known gaps (not fixed — tracked here instead)
 

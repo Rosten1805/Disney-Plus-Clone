@@ -39,5 +39,8 @@
     "prettier-plugin-tailwindcss": "^0.2.0",
     "tailwind-scrollbar": "^2.0.1",
     "tailwindcss": "^3.2.4"
+  },
+  "overrides": {
+    "nodemailer": "^10.2.1"
   }
 }

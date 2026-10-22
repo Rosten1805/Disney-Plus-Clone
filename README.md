@@ -47,6 +47,49 @@ Required environment variables (see `.env.example`):
 | `DATABASE_URL` | Neon Postgres connection string (`neon link` generates this) |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | Outgoing mail for email verification — **optional**: with no `SMTP_HOST` set, the app auto-generates a disposable test inbox and logs a preview link to the console instead |
 
+## Running with Docker
+
+The app ships a multi-stage `Dockerfile` (small runtime image via Next.js
+`output: "standalone"`, non-root user) plus a `docker-compose.yml`.
+
+**Easiest path — Docker Compose** (reads build and runtime config straight
+from your `.env`, no extra flags):
+
+```bash
+cp .env.example .env   # fill in your own values
+docker compose up --build
+```
+
+**Plain `docker build`/`run`**, if you're not using Compose: `TMDB_API_KEY`
+and `TMDB_API_URL` are needed *at build time* too (Next.js evaluates every
+page once during `next build` to decide if it can be static, which runs the
+TMDB fetches on the home/search/series/originals pages). They're passed in
+as [Docker build secrets](https://docs.docker.com/build/building/secrets/)
+— not `ARG`/`ENV` — so they're never written into an image layer or visible
+via `docker history`:
+
+```bash
+export TMDB_API_KEY=your_key
+export TMDB_API_URL=https://api.themoviedb.org
+docker build --secret id=tmdb_api_key,env=TMDB_API_KEY \
+             --secret id=tmdb_api_url,env=TMDB_API_URL \
+             -t disney-plus-clone .
+
+docker run -p 3000:3000 --env-file .env disney-plus-clone
+```
+
+> **Heads up:** `docker run --env-file` does **not** strip quotes the way
+> `next dev` and Docker Compose's `env_file:` both do. If your `.env` values
+> are quoted (`NEXTAUTH_URL="http://localhost:3000"`, as in `.env.example`),
+> a plain `docker run --env-file` passes the quotes through literally and
+> breaks `new URL(...)` calls in the app. Either strip the quotes for a
+> Docker-only env file, or just use `docker compose up` instead, which
+> handles this correctly.
+
+No other secret (`DATABASE_URL`, `GOOGLE_SECRET`, `SMTP_*`, ...) is needed
+at build time — those are only read at request time, inside the final
+container, via the normal `--env-file`/`env_file:`.
+
 ## Why this repo has vulnerabilities in it
 
 The point of a DevSecOps pipeline is proving that its security gates

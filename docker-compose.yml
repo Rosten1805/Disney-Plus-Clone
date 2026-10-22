@@ -1,0 +1,18 @@
+services:
+  app:
+    build:
+      context: .
+      secrets:
+        - tmdb_api_key
+        - tmdb_api_url
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    restart: unless-stopped
+
+secrets:
+  tmdb_api_key:
+    environment: TMDB_API_KEY
+  tmdb_api_url:
+    environment: TMDB_API_URL
