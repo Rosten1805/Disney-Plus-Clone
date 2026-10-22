@@ -10,9 +10,10 @@ import Card from "./card";
 type Props = {
   name: string;
   medias: Media[];
+  showTitle?: boolean;
 };
 
-const Portrait = ({ name, medias }: Props) => {
+const Portrait = ({ name, medias, showTitle }: Props) => {
   const [collection, setCollection] = useState(medias);
   const [isOnOrigin, setIsOnOrigin] = useState(true);
   const { width } = useWindowSize();
@@ -70,7 +71,7 @@ const Portrait = ({ name, medias }: Props) => {
                 ${index < 6 ? "laptop:block" : "hidden"}  
                 ${index < 8 ? "desktop:block" : "hidden"} 
                 relative`}>
-              <Card media={media} />
+              <Card media={media} showTitle={showTitle} />
             </li>
           ))}
         </ul>
@@ -95,7 +96,7 @@ const Portrait = ({ name, medias }: Props) => {
       <ul className="flex gap-1 overflow-x-scroll scrollbar-hide tablet:hidden">
         {medias.map((media) => (
           <li key={media.id}>
-            <Card media={media} />
+            <Card media={media} showTitle={showTitle} />
           </li>
         ))}
       </ul>

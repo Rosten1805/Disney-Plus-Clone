@@ -1,6 +1,7 @@
 import "../styles/globals.css";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Inter } from "@next/font/google";
+import { Inter } from "next/font/google";
 import useAuth from "../hooks/use-auth";
 import Access from "../components/sections/access";
 import Image from "next/image";
@@ -10,6 +11,23 @@ import Providers from "../components/providers";
 const inter = Inter({
   subsets: ["latin"],
 });
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
+export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXTAUTH_URL ?? "http://localhost:3000"),
+  title: {
+    default: "Disney Plus",
+    template: "Disney Plus | %s",
+  },
+  description:
+    "A fully interactive and responsive one to one multi-page disney plus clone web application build by Cristina Cañadas Gómez - Limón.",
+  icons: { icon: "/disney-plus-icon.ico" },
+  openGraph: { images: ["/disney-plus-og.png"] },
+};
 
 type Props = {
   children: ReactNode;

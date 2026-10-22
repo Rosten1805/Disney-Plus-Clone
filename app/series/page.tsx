@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Fade from "../../components/elements/fade";
 import Billboard from "../../components/sections/billboard";
 import Collection from "../../components/sections/collection";
@@ -6,9 +7,15 @@ import Content from "../../components/layouts/content";
 import api from "../../library/api";
 import data from "../../library/data";
 
+export const metadata: Metadata = {
+  title: "Series",
+};
+
 const Page = async () => {
-  const spotlightMedia = await api.get.media.spotlight({ type: "series" });
-  const collections = await data("series");
+  const [spotlightMedia, collections] = await Promise.all([
+    api.get.media.spotlight({ type: "series" }),
+    data("series"),
+  ]);
 
   return (
     <>

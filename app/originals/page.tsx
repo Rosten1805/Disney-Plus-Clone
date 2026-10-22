@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Fade from "../../components/elements/fade";
 import Billboard from "../../components/sections/billboard";
 import Collection from "../../components/sections/collection";
@@ -5,6 +6,10 @@ import Showcase from "../../components/sections/showcase";
 import Content from "../../components/layouts/content";
 import randomNumber from "../../helpers/random-number";
 import data from "../../library/data";
+
+export const metadata: Metadata = {
+  title: "Originals",
+};
 
 const Page = async () => {
   const collections = await data("originals");

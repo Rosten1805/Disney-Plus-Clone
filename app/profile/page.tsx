@@ -1,23 +1,16 @@
-import Collection from "../../components/sections/collection";
+import type { Metadata } from "next";
 import Cover from "../../components/sections/cover";
 import User from "../../components/sections/user";
+import Settings from "../../components/sections/settings";
 import Content from "../../components/layouts/content";
-import shuffleMedias from "../../helpers/shuffle-medias";
-import api from "../../library/api";
+import useAuth from "../../hooks/use-auth";
+
+export const metadata: Metadata = {
+  title: "Profile",
+};
 
 const Page = async () => {
-  const popularMovies = await api.get.medias.group({
-    name: "popular",
-    type: "movies",
-    page: 1,
-  });
-  const popularSeries = await api.get.medias.group({
-    name: "popular",
-    type: "series",
-    page: 1,
-  });
-
-  const popularMedias = shuffleMedias([...popularMovies, ...popularSeries]);
+  const { session } = await useAuth();
 
   return (
     <>
@@ -25,10 +18,10 @@ const Page = async () => {
       <Content variant="secondary">
         {/* @ts-ignore */}
         <User />
-        <Collection.Landscape
-          name="Just for you"
-          medias={popularMedias}
-          isOnlyGrid
+        <Settings
+          name={session?.user?.name}
+          email={session?.user?.email}
+          provider={(session as any)?.provider}
         />
       </Content>
     </>

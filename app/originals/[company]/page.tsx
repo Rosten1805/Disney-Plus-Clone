@@ -3,8 +3,13 @@ import Cover from "../../../components/sections/cover";
 import Collection from "../../../components/sections/collection";
 import data from "../../../library/data";
 
-const Page = async ({ params: { company } }: any) => {
-  const collections = await data(company);
+type Props = {
+  params: Promise<{ company: string }>;
+};
+
+const Page = async ({ params }: Props) => {
+  const { company } = await params;
+  const collections = await data(company as any);
 
   return (
     <>

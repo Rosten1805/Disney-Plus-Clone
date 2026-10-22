@@ -5,18 +5,17 @@ import Showcase from "../../../components/sections/showcase";
 import Content from "../../../components/layouts/content";
 import api from "../../../library/api";
 
-const Page = async ({ params: { id } }: any) => {
-  const spotlightMedia = await api.get.media.details({ type: "series", id });
-  const similarMedias = await api.get.medias.similar({
-    type: "series",
-    id,
-    page: 1,
-  });
-  const popularSeries = await api.get.medias.group({
-    name: "popular",
-    type: "series",
-    page: 1,
-  });
+type Props = {
+  params: Promise<{ id: string }>;
+};
+
+const Page = async ({ params }: Props) => {
+  const { id } = await params;
+  const [spotlightMedia, similarMedias, popularSeries] = await Promise.all([
+    api.get.media.details({ type: "series", id }),
+    api.get.medias.similar({ type: "series", id, page: 1 }),
+    api.get.medias.group({ name: "popular", type: "series", page: 1 }),
+  ]);
 
   return (
     <>

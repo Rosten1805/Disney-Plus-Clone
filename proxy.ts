@@ -21,5 +21,6 @@ export const config = {
     "/originals/:path*",
     "/search/:path*",
     "/profile/:path*",
+    "/my-list/:path*",
   ],
 };

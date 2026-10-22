@@ -144,6 +144,77 @@ const api = {
           });
         return shuffleMedias(medias) as Media[];
       }),
+      discover: cache(
+        async ({
+          type,
+          companies,
+          networks,
+          sortBy,
+          page,
+          minVotes,
+          releaseDateLte,
+        }: {
+          type: Type;
+          companies?: string;
+          networks?: string;
+          sortBy?: string;
+          page?: number;
+          minVotes?: number;
+          releaseDateLte?: string;
+        }) => {
+          const endpoint = type === "movies" ? "movie" : "tv";
+          const params = new URLSearchParams({
+            api_key: TMDB_API_KEY,
+            language: "en-US",
+            include_adult: "false",
+            sort_by: sortBy ?? "popularity.desc",
+            page: String(page ?? 1),
+            "vote_count.gte": String(minVotes ?? 20),
+          });
+          if (companies) params.set("with_companies", companies);
+          if (networks) params.set("with_networks", networks);
+          if (releaseDateLte) {
+            params.set(
+              type === "movies"
+                ? "primary_release_date.lte"
+                : "first_air_date.lte",
+              releaseDateLte
+            );
+          }
+          const response = await fetch(
+            `${TMDB_API_URL}/3/discover/${endpoint}?${params.toString()}`,
+            {
+              next: { revalidate: 3600 },
+            }
+          );
+          const { results } = await response.json();
+          const medias = results
+            .filter(
+              (media: any) =>
+                media.poster_path && media.backdrop_path && media.overview
+            )
+            .map((media: any) => {
+              return {
+                id: media.id,
+                title: media.title ? media.title : media.name,
+                isForAdult: media.adult,
+                type: type === "movies" ? "movies" : "series",
+                image: {
+                  poster: media.poster_path,
+                  backdrop: media.backdrop_path,
+                },
+                overview: media.overview,
+                releasedAt: media.release_date
+                  ? media.release_date
+                  : media.first_air_date,
+                language: {
+                  original: media.original_language,
+                },
+              };
+            });
+          return medias as Media[];
+        }
+      ),
       group: cache(async ({ name, type, page }: Group) => {
         const group = name.split("-").join("_");
         const response = await fetch(

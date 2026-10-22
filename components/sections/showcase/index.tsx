@@ -2,6 +2,7 @@ import Image from "next/image";
 import api from "../../../library/api";
 import type { Media } from "../../../types";
 import Button from "../../elements/button";
+import SaveButton from "./save-button";
 import convertLanguage from "../../../helpers/convert-language";
 import humanizeRuntime from "../../../helpers/humanize-runtime";
 
@@ -13,8 +14,10 @@ type Props = {
 const Showcase = async ({ media, isMediaSelected }: Props) => {
   const type = media.type!;
   const id = media.id;
-  const logo = await api.get.media.logo({ type, id });
-  const measure = await api.get.media.measure({ type, id });
+  const [logo, measure] = await Promise.all([
+    api.get.media.logo({ type, id }),
+    api.get.media.measure({ type, id }),
+  ]);
   const language = convertLanguage(media.language!.original!);
 
   return (
@@ -73,13 +76,7 @@ const Showcase = async ({ media, isMediaSelected }: Props) => {
           isFull>
           Watch Now
         </Button>
-        <Button
-          variant={{
-            name: "primary",
-            type: "save",
-            isInverted: false,
-          }}
-        />
+        <SaveButton media={media} isInverted={false} />
       </div>
     </section>
   );

@@ -1,6 +1,11 @@
+import type { Metadata } from "next";
 import Collection from "../../components/sections/collection";
 import api from "../../library/api";
 import type { Media } from "../../types";
+
+export const metadata: Metadata = {
+  title: "Search",
+};
 
 const Page = async () => {
   const popularMovies = await api.get.medias.group({

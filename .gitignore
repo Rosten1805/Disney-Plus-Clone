@@ -28,6 +28,11 @@ yarn-error.log*
 # local env files
 .env
 
+# leftover local sqlite database (migrated to Neon Postgres, safe to delete)
+watchlist.db
+watchlist.db-shm
+watchlist.db-wal
+
 # vercel
 .vercel
 
@@ -37,3 +42,4 @@ next-env.d.ts
 
 # vscode
 .vscode
+.neon

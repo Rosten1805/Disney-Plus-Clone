@@ -1,7 +1,12 @@
 import Collection from "../../../components/sections/collection";
 import api from "../../../library/api";
 
-const Page = async ({ params: { query } }: any) => {
+type Props = {
+  params: Promise<{ query: string }>;
+};
+
+const Page = async ({ params }: Props) => {
+  const { query } = await params;
   const searchedMedias = await api.get.medias.search({
     query,
     page: 1,

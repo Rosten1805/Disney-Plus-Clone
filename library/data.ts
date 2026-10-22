@@ -15,474 +15,480 @@ type Page =
   | "star"
   | "disney";
 type Data = { id: string; name: string; medias: Media[] };
+type Row = { name: string; fetch: () => Promise<Media[]> };
+
+// TMDB company/network ids (verified against the TMDB API)
+const STUDIO = {
+  waltDisneyPictures: "2",
+  waltDisneyAnimation: "6125",
+  disneyAnimationCombo: "2|6125",
+  marvelStudios: "420",
+  lucasfilm: "1",
+  pixar: "3",
+  twentiethCenturyStudios: "127928",
+  searchlightPictures: "127929",
+  starStudiosCombo: "127928|127929",
+  nationalGeographicFilms: "7521|189457",
+};
+
+const NETWORK = {
+  disneyPlus: "2739",
+  nationalGeographic: "43",
+  abc: "2",
+};
+
+// Bound "new/upcoming" queries to today so we never show far-future placeholders
+const today = () => new Date().toISOString().slice(0, 10);
+
+// Runs every row's fetch concurrently instead of waiting on each one in turn
+const resolve = async (rows: Row[]): Promise<Data[]> => {
+  const medias = await Promise.all(rows.map((row) => row.fetch()));
+  return rows.map((row, index) => ({
+    id: cuid(),
+    name: row.name,
+    medias: medias[index],
+  }));
+};
+
+const trendingCombined = async (type: "movies" | "series") =>
+  shuffleMedias(
+    (
+      await Promise.all([
+        api.get.medias.trending({ type, time: "day" }),
+        api.get.medias.trending({ type, time: "week" }),
+      ])
+    ).flat()
+  );
 
 const data = async (page: Page): Promise<Data[]> => {
   switch (page) {
     case "home": {
-      return [
+      return resolve([
         {
-          id: cuid(),
-          name: "Disney Originals",
-          medias: await api.get.medias.search({
-            query: "disney",
-            page: 1,
-          }),
+          name: "Disney+ Originals",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "series",
+              networks: NETWORK.disneyPlus,
+              sortBy: "popularity.desc",
+            }),
         },
         {
-          id: cuid(),
           name: "Popular Movies",
-          medias: await api.get.medias.group({
-            name: "popular",
-            type: "movies",
-            page: 1,
-          }),
+          fetch: () =>
+            api.get.medias.group({ name: "popular", type: "movies", page: 1 }),
         },
         {
-          id: cuid(),
           name: "Popular Series",
-          medias: await api.get.medias.group({
-            name: "popular",
-            type: "series",
-            page: 1,
-          }),
+          fetch: () =>
+            api.get.medias.group({ name: "popular", type: "series", page: 1 }),
         },
         {
-          id: cuid(),
           name: "New to Disney+",
-          medias: shuffleMedias([
-            ...(await api.get.medias.group({
-              name: "now-playing",
+          fetch: () =>
+            api.get.medias.discover({
               type: "movies",
-              page: 1,
-            })),
-            ...(await api.get.medias.group({
-              name: "now-playing",
-              type: "movies",
-              page: 1,
-            })),
-          ]),
+              companies: STUDIO.disneyAnimationCombo,
+              sortBy: "primary_release_date.desc",
+              releaseDateLte: today(),
+            }),
         },
         {
-          id: cuid(),
-          name: "Featured Marvel",
-          medias: shuffleMedias([
-            ...(await api.get.medias.search({
-              query: "iron man",
-              page: 1,
-            })),
-            ...(await api.get.medias.search({
-              query: "avengers",
-              page: 1,
-            })),
-            ...(await api.get.medias.search({
-              query: "spider man",
-              page: 1,
-            })),
-          ]),
+          name: "Marvel Cinematic Universe",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.marvelStudios,
+              sortBy: "primary_release_date.desc",
+              releaseDateLte: today(),
+            }),
         },
         {
-          id: cuid(),
           name: "Best of Pixar",
-          medias: await api.get.medias.search({
-            query: "pixar",
-            page: 1,
-          }),
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.pixar,
+              sortBy: "popularity.desc",
+            }),
         },
-      ];
+      ]);
     }
     case "series": {
-      return [
+      return resolve([
         {
-          id: cuid(),
-          name: "Trending Series",
-          medias: shuffleMedias([
-            ...(await api.get.medias.trending({
+          name: "Disney+ Originals",
+          fetch: () =>
+            api.get.medias.discover({
               type: "series",
-              time: "day",
-            })),
-            ...(await api.get.medias.trending({
-              type: "series",
-              time: "week",
-            })),
-          ]),
+              networks: NETWORK.disneyPlus,
+              sortBy: "popularity.desc",
+            }),
         },
+        { name: "Trending Series", fetch: () => trendingCombined("series") },
         {
-          id: cuid(),
           name: "Popular Series",
-          medias: await api.get.medias.group({
-            name: "popular",
-            type: "series",
-            page: 1,
-          }),
+          fetch: () =>
+            api.get.medias.group({ name: "popular", type: "series", page: 1 }),
         },
         {
-          id: cuid(),
           name: "Top Rated Series",
-          medias: await api.get.medias.group({
-            name: "top-rated",
-            type: "series",
-            page: 1,
-          }),
+          fetch: () =>
+            api.get.medias.group({
+              name: "top-rated",
+              type: "series",
+              page: 1,
+            }),
         },
         {
-          id: cuid(),
           name: "Live Now",
-          medias: await api.get.medias.group({
-            name: "on-the-air",
-            type: "series",
-            page: 1,
-          }),
+          fetch: () =>
+            api.get.medias.group({
+              name: "on-the-air",
+              type: "series",
+              page: 1,
+            }),
         },
         {
-          id: cuid(),
           name: "New Episodes",
-          medias: await api.get.medias.group({
-            name: "airing-today",
-            type: "series",
-            page: 1,
-          }),
+          fetch: () =>
+            api.get.medias.group({
+              name: "airing-today",
+              type: "series",
+              page: 1,
+            }),
         },
-      ];
+      ]);
     }
     case "movies": {
-      return [
+      return resolve([
         {
-          id: cuid(),
-          name: "Trending Movies",
-          medias: shuffleMedias([
-            ...(await api.get.medias.trending({
+          name: "From The Walt Disney Studios",
+          fetch: () =>
+            api.get.medias.discover({
               type: "movies",
-              time: "day",
-            })),
-            ...(await api.get.medias.trending({
-              type: "movies",
-              time: "week",
-            })),
-          ]),
+              companies: `${STUDIO.disneyAnimationCombo}|${STUDIO.marvelStudios}|${STUDIO.lucasfilm}|${STUDIO.pixar}`,
+              sortBy: "primary_release_date.desc",
+              releaseDateLte: today(),
+            }),
         },
+        { name: "Trending Movies", fetch: () => trendingCombined("movies") },
         {
-          id: cuid(),
           name: "Now Playing",
-          medias: await api.get.medias.group({
-            name: "now-playing",
-            type: "movies",
-            page: 1,
-          }),
+          fetch: () =>
+            api.get.medias.group({
+              name: "now-playing",
+              type: "movies",
+              page: 1,
+            }),
         },
         {
-          id: cuid(),
           name: "Just Released",
-          medias: await api.get.medias.group({
-            name: "upcoming",
-            type: "movies",
-            page: 1,
-          }),
+          fetch: () =>
+            api.get.medias.group({ name: "upcoming", type: "movies", page: 1 }),
         },
         {
-          id: cuid(),
           name: "Top Rated Movies",
-          medias: await api.get.medias.group({
-            name: "top-rated",
-            type: "movies",
-            page: 1,
-          }),
+          fetch: () =>
+            api.get.medias.group({
+              name: "top-rated",
+              type: "movies",
+              page: 1,
+            }),
         },
         {
-          id: cuid(),
           name: "Popular",
-          medias: await api.get.medias.group({
-            name: "popular",
-            type: "movies",
-            page: 1,
-          }),
+          fetch: () =>
+            api.get.medias.group({ name: "popular", type: "movies", page: 1 }),
         },
-      ];
+      ]);
     }
     case "originals": {
-      const ironManMedias = await api.get.medias.search({
-        query: "iron man",
-        page: 1,
-      });
-      const avengersMedias = await api.get.medias.search({
-        query: "avengers",
-        page: 1,
-      });
-      const spiderManMedias = await api.get.medias.search({
-        query: "spider man",
-        page: 1,
-      });
-      const pixarMedias = await api.get.medias.search({
-        query: "pixar",
-        page: 1,
-      });
-      const disneyMedias = await api.get.medias.search({
-        query: "disney",
-        page: 1,
-      });
-      const starwarsMedias = await api.get.medias.search({
-        query: "star wars",
-        page: 1,
-      });
-      const shrekMedias = await api.get.medias.search({
-        query: "shrek",
-        page: 1,
-      });
-      const minionsMedias = await api.get.medias.search({
-        query: "minions",
-        page: 1,
-      });
+      const [marvelMedias, starwarsMedias, disneyMedias, pixarMedias, natGeoMedias] =
+        await Promise.all([
+          api.get.medias.discover({
+            type: "movies",
+            companies: STUDIO.marvelStudios,
+            sortBy: "popularity.desc",
+          }),
+          api.get.medias.discover({
+            type: "movies",
+            companies: STUDIO.lucasfilm,
+            sortBy: "popularity.desc",
+          }),
+          api.get.medias.discover({
+            type: "movies",
+            companies: STUDIO.disneyAnimationCombo,
+            sortBy: "popularity.desc",
+          }),
+          api.get.medias.discover({
+            type: "movies",
+            companies: STUDIO.pixar,
+            sortBy: "popularity.desc",
+          }),
+          api.get.medias.discover({
+            type: "series",
+            networks: NETWORK.nationalGeographic,
+            sortBy: "popularity.desc",
+          }),
+        ]);
       return [
         {
           id: cuid(),
           name: "Featured",
           medias: shuffleMedias([
-            ...ironManMedias,
-            ...avengersMedias,
+            ...marvelMedias,
             ...starwarsMedias,
-            ...minionsMedias,
-            ...spiderManMedias,
-            ...shrekMedias,
             ...disneyMedias,
             ...pixarMedias,
+            ...natGeoMedias,
           ]),
         },
-        { id: cuid(), name: "Minions", medias: minionsMedias },
-        { id: cuid(), name: "Avengers", medias: avengersMedias },
-        { id: cuid(), name: "Starwars", medias: starwarsMedias },
+        { id: cuid(), name: "Marvel", medias: marvelMedias },
+        { id: cuid(), name: "Star Wars", medias: starwarsMedias },
         { id: cuid(), name: "Disney", medias: disneyMedias },
         { id: cuid(), name: "Pixar", medias: pixarMedias },
-        { id: cuid(), name: "Shrek", medias: shrekMedias },
+        { id: cuid(), name: "National Geographic", medias: natGeoMedias },
       ];
     }
     case "marvel": {
-      return [
+      return resolve([
         {
-          id: cuid(),
-          name: "Avengers",
-          medias: await api.get.medias.search({
-            query: "avengers",
-            page: 1,
-          }),
+          name: "New & Upcoming",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.marvelStudios,
+              sortBy: "primary_release_date.desc",
+              releaseDateLte: today(),
+            }),
         },
         {
-          id: cuid(),
-          name: "Iron Man",
-          medias: await api.get.medias.search({
-            query: "iron man",
-            page: 1,
-          }),
+          name: "Most Popular",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.marvelStudios,
+              sortBy: "popularity.desc",
+            }),
         },
         {
-          id: cuid(),
-          name: "Thor",
-          medias: await api.get.medias.search({
-            query: "thor",
-            page: 1,
-          }),
+          name: "Top Rated",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.marvelStudios,
+              sortBy: "vote_average.desc",
+              minVotes: 300,
+            }),
         },
         {
-          id: cuid(),
-          name: "Hulk",
-          medias: await api.get.medias.search({
-            query: "hulk",
-            page: 1,
-          }),
+          name: "Marvel Series",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "series",
+              companies: STUDIO.marvelStudios,
+              sortBy: "popularity.desc",
+            }),
         },
-        {
-          id: cuid(),
-          name: "Spider Man",
-          medias: await api.get.medias.search({
-            query: "spider man",
-            page: 1,
-          }),
-        },
-      ];
+      ]);
     }
     case "pixar": {
-      return [
+      return resolve([
         {
-          id: cuid(),
           name: "Featured",
-          medias: await api.get.medias.search({
-            query: "pixar",
-            page: 1,
-          }),
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.pixar,
+              sortBy: "popularity.desc",
+            }),
         },
         {
-          id: cuid(),
+          name: "New & Upcoming",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.pixar,
+              sortBy: "primary_release_date.desc",
+              releaseDateLte: today(),
+            }),
+        },
+        {
           name: "Toy Story",
-          medias: await api.get.medias.search({
-            query: "toy story",
-            page: 1,
-          }),
+          fetch: () => api.get.medias.search({ query: "toy story", page: 1 }),
         },
         {
-          id: cuid(),
           name: "Cars",
-          medias: await api.get.medias.search({
-            query: "Cars",
-            page: 1,
-          }),
+          fetch: () => api.get.medias.search({ query: "Cars", page: 1 }),
         },
         {
-          id: cuid(),
           name: "The Incredibles",
-          medias: await api.get.medias.search({
-            query: "the incredibles",
-            page: 1,
-          }),
+          fetch: () =>
+            api.get.medias.search({ query: "the incredibles", page: 1 }),
         },
-      ];
+      ]);
     }
     case "starwars": {
-      return [
+      return resolve([
         {
-          id: cuid(),
-          name: "Starwars",
-          medias: await api.get.medias.search({
-            query: "star wars",
-            page: 1,
-          }),
+          name: "New & Upcoming",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.lucasfilm,
+              sortBy: "primary_release_date.desc",
+              releaseDateLte: today(),
+            }),
         },
         {
-          id: cuid(),
-          name: "Jedi",
-          medias: await api.get.medias.search({
-            query: "jedi",
-            page: 1,
-          }),
+          name: "Most Popular",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.lucasfilm,
+              sortBy: "popularity.desc",
+            }),
         },
         {
-          id: cuid(),
-          name: "Troopers",
-          medias: await api.get.medias.search({
-            query: "troopers",
-            page: 1,
-          }),
+          name: "Star Wars Series",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "series",
+              companies: STUDIO.lucasfilm,
+              sortBy: "popularity.desc",
+            }),
         },
-      ];
+      ]);
     }
     case "disney": {
-      return [
+      return resolve([
         {
-          id: cuid(),
           name: "Featured",
-          medias: await api.get.medias.search({
-            query: "disney",
-            page: 1,
-          }),
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.disneyAnimationCombo,
+              sortBy: "popularity.desc",
+            }),
         },
         {
-          id: cuid(),
-          name: "Despicable Me",
-          medias: [
-            ...(await api.get.medias.search({
-              query: "despicable me",
-              page: 1,
-            })),
-            ...(await api.get.medias.search({
-              query: "shrek",
-              page: 1,
-            })),
-          ],
+          name: "New Disney Movies",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.disneyAnimationCombo,
+              sortBy: "primary_release_date.desc",
+              releaseDateLte: today(),
+            }),
         },
         {
-          id: cuid(),
-          name: "More on Disney",
-          medias: await api.get.medias.search({
-            query: "despicable me",
-            page: 1,
-          }),
+          name: "Disney Classics",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.disneyAnimationCombo,
+              sortBy: "vote_average.desc",
+              minVotes: 500,
+            }),
         },
         {
-          id: cuid(),
-          name: "Minions",
-          medias: await api.get.medias.search({
-            query: "Minions",
-            page: 1,
-          }),
+          name: "Disney+ Original Series",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "series",
+              networks: NETWORK.disneyPlus,
+              sortBy: "popularity.desc",
+            }),
         },
-        {
-          id: cuid(),
-          name: "Shrek",
-          medias: await api.get.medias.search({
-            query: "shrek",
-            page: 1,
-          }),
-        },
-      ];
+      ]);
     }
     case "national-geographic": {
-      return [
+      return resolve([
         {
-          id: cuid(),
-          name: "Our Planet Earth",
-          medias: await api.get.medias.search({
-            query: "Earth",
-            page: 1,
-          }),
+          name: "National Geographic Series",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "series",
+              networks: NETWORK.nationalGeographic,
+              sortBy: "popularity.desc",
+              minVotes: 5,
+            }),
         },
         {
-          id: cuid(),
-          name: "Space Exploration",
-          medias: await api.get.medias.search({
-            query: "space",
-            page: 1,
-          }),
+          name: "Documentaries",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.nationalGeographicFilms,
+              sortBy: "popularity.desc",
+              minVotes: 5,
+            }),
         },
         {
-          id: cuid(),
-          name: "Documentary Series",
-          medias: await api.get.medias.search({
-            query: "documentary",
-            page: 1,
-          }),
+          name: "New Releases",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.nationalGeographicFilms,
+              sortBy: "primary_release_date.desc",
+              releaseDateLte: today(),
+              minVotes: 1,
+            }),
         },
         {
-          id: cuid(),
-          name: "Outer Space",
-          medias: await api.get.medias.search({
-            query: "sun",
-            page: 1,
-          }),
+          name: "Most Acclaimed",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.nationalGeographicFilms,
+              sortBy: "vote_average.desc",
+              minVotes: 50,
+            }),
         },
-      ];
+      ]);
     }
     case "star": {
-      return [
+      return resolve([
         {
-          id: cuid(),
-          name: "Shows",
-          medias: await api.get.medias.search({
-            query: "show",
-            page: 1,
-          }),
+          name: "Only on Star",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.starStudiosCombo,
+              sortBy: "popularity.desc",
+            }),
         },
         {
-          id: cuid(),
-          name: "Romantic",
-          medias: await api.get.medias.search({
-            query: "romantic",
-            page: 1,
-          }),
+          name: "New Releases",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.starStudiosCombo,
+              sortBy: "primary_release_date.desc",
+              releaseDateLte: today(),
+            }),
         },
         {
-          id: cuid(),
-          name: "Comedy",
-          medias: await api.get.medias.search({
-            query: "comedy",
-            page: 1,
-          }),
+          name: "Acclaimed Films",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "movies",
+              companies: STUDIO.starStudiosCombo,
+              sortBy: "vote_average.desc",
+              minVotes: 300,
+            }),
         },
         {
-          id: cuid(),
-          name: "Action",
-          medias: await api.get.medias.search({
-            query: "action",
-            page: 1,
-          }),
+          name: "ABC & Star Series",
+          fetch: () =>
+            api.get.medias.discover({
+              type: "series",
+              networks: NETWORK.abc,
+              sortBy: "popularity.desc",
+            }),
         },
-      ];
+      ]);
     }
     default:
       return [];

@@ -7,8 +7,10 @@ import Collection from "../components/sections/collection";
 import data from "../library/data";
 
 const Page = async () => {
-  const spotlightMedia = await api.get.media.spotlight({ type: "all" });
-  const collections = await data("home");
+  const [spotlightMedia, collections] = await Promise.all([
+    api.get.media.spotlight({ type: "all" }),
+    data("home"),
+  ]);
 
   return (
     <>

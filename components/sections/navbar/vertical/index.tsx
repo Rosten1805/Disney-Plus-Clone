@@ -11,6 +11,7 @@ import {
   FilmIcon,
   SparklesIcon,
   UserIcon,
+  BookmarkIcon,
 } from "@heroicons/react/24/outline";
 import NextLink from "next/link";
 import { useSelectedLayoutSegment } from "next/navigation";
@@ -52,6 +53,12 @@ const list = [
     Icon: SparklesIcon,
     to: "Originals",
   },
+  {
+    id: 6,
+    href: "/my-list",
+    Icon: BookmarkIcon,
+    to: "My List",
+  },
 ];
 
 const Vertical = () => {
@@ -67,9 +74,7 @@ const Vertical = () => {
         } transition-smooth pointer-events-none fixed z-40 h-screen w-screen bg-gradient-to-r from-background-dark to-transparent`}
       />
       <nav className="sticky top-0 z-50 flex h-screen flex-col">
-        <NextLink
-          href="https://github.com/ntabucejo/disney-plus"
-          className="py-12 px-6">
+        <NextLink href="/" className="py-12 px-6">
           <Image
             alt="Disney Plus Logo"
             src="/assets/images/disney-plus-logo.png"
