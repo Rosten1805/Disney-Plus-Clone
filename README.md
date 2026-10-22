@@ -5,6 +5,8 @@ application for a **DevSecOps CI/CD pipeline** project: a real, working app
 with a small set of **intentional, documented vulnerabilities** for SAST,
 secrets-scanning, and dependency-review tooling to catch.
 
+![Disney Plus Clone screenshot](./docs/screenshot.png)
+
 > **Credit / based on:** this project started from the
 > [Disney Plus Clone](https://github.com/ntabucejo/disney-plus-clone) by
 > **Nikko Abucejo**, whose original README states: *"Everything on this
