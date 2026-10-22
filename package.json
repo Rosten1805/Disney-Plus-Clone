@@ -10,7 +10,7 @@
     "app": "next lint & next build & next start"
   },
   "dependencies": {
-    "@heroicons/react": "^2.0.13",
+    "@heroicons/react": "^2.2.0",
     "@types/node": "^18.19.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
