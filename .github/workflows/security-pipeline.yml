@@ -1,0 +1,12 @@
+name: Security Pipeline
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  call-pipeline:
+    uses: Rosten1805/tfg-devsecops-pipeline/.github/workflows/security-pipeline.yml@main
+    secrets: inherit
