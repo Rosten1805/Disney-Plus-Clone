@@ -4,7 +4,9 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main]
+    branches:
+      - main
+      - test/pipeline-full-green # TEMPORARY - revert after verifying the deploy gate, see commit message
 
 jobs:
   call-pipeline:
