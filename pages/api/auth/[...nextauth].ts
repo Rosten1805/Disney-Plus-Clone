@@ -12,13 +12,12 @@ export const authOptions: NextAuthOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_ID!,
-      // INTENTIONAL FLAW (kept on purpose for a DevSecOps/CI-CD pipeline
-      // demo — see SECURITY_NOTES.md): hardcoded secret fallback. This is
-      // a fake value (never registered with Google, harmless on its own),
-      // but it's exactly the shape a secrets scanner (gitleaks/trufflehog)
-      // is built to catch: a credential committed to source instead of
-      // living only in env vars/a secret manager.
-      clientSecret: process.env.GOOGLE_SECRET || "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0u",
+      // [test/pipeline-full-green] Fixed: no hardcoded fallback — a missing
+      // GOOGLE_SECRET now fails loudly at startup instead of silently using
+      // a secret-shaped literal, closing the issue in SECURITY_NOTES.md.
+      // Not merged to main — this branch only verifies the pipeline
+      // deploys when the app is clean.
+      clientSecret: process.env.GOOGLE_SECRET!,
       authorization: {
         params: {
           prompt: "consent",

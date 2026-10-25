@@ -23,20 +23,11 @@ const Card = ({ media, showTitle }: Props) => {
         />
       </Link>
       {showTitle ? (
-        /**
-         * INTENTIONAL FLAW (kept on purpose for a DevSecOps/CI-CD pipeline
-         * demo — see SECURITY_NOTES.md): stored XSS. `media.title` here
-         * comes straight from the watchlist (`POST /api/watchlist` accepts
-         * any client-supplied `title` string, no validation, stored as-is
-         * in Postgres). Rendering it with `dangerouslySetInnerHTML` instead
-         * of as plain JSX text means a title like
-         * `<img src=x onerror=alert(document.cookie)>` persists and
-         * executes every time this viewer's My List page renders.
-         */
-        <p
-          className="mt-1 truncate text-xs font-semibold"
-          dangerouslySetInnerHTML={{ __html: media.title! }}
-        />
+        // [test/pipeline-full-green] Fixed: plain JSX text instead of
+        // dangerouslySetInnerHTML — React escapes this by default, closing
+        // the stored XSS described in SECURITY_NOTES.md. Not merged to
+        // main — this branch only verifies the pipeline deploys when clean.
+        <p className="mt-1 truncate text-xs font-semibold">{media.title}</p>
       ) : null}
     </div>
   );

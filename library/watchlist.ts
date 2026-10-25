@@ -86,14 +86,10 @@ export const removeFromWatchlist = async (
 };
 
 /**
- * INTENTIONAL FLAW (kept on purpose for a DevSecOps/CI-CD pipeline demo —
- * see SECURITY_NOTES.md): SQL injection via string interpolation instead of
- * a parameterized query. Do not copy this pattern elsewhere in the app.
- * `userEmail` is bound as a parameter, but `name` is concatenated directly
- * into the SQL text, so a payload like `' OR '1'='1' -- ` short-circuits
- * the whole WHERE clause (including the userEmail check) and leaks every
- * row in the table, not just the caller's own. A UNION-based payload can
- * go further and read arbitrary columns/tables.
+ * [test/pipeline-full-green] Fixed: `name` is now bound as a parameter
+ * ($2) instead of interpolated into the SQL text, closing the SQL
+ * injection described in SECURITY_NOTES.md. Not merged to main — this
+ * branch exists only to verify the pipeline deploys when the app is clean.
  */
 export const searchWatchlistByTitle = async (
   userEmail: string,
@@ -101,7 +97,9 @@ export const searchWatchlistByTitle = async (
 ): Promise<WatchlistItem[]> => {
   const { pool, ready } = getDb();
   await ready;
-  const query = `SELECT * FROM watchlist WHERE user_email = $1 AND title LIKE '%${name}%'`;
-  const { rows } = await pool.query(query, [userEmail]);
+  const { rows } = await pool.query(
+    "SELECT * FROM watchlist WHERE user_email = $1 AND title LIKE $2",
+    [userEmail, `%${name}%`]
+  );
   return rows.map(rowToItem);
 };
