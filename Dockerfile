@@ -35,6 +35,13 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 nodejs \
   && adduser --system --uid 1001 nextjs
 
+# The final image only ever runs `node server.js` — npm itself (and its own
+# vendored dependencies, which is where Trivy found real, fixable HIGH CVEs
+# unrelated to anything this app actually depends on) is dead weight in a
+# production runtime image. Removing it shrinks the attack surface instead
+# of just suppressing the finding.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx /usr/local/share/man/man1/npm*
+
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
